@@ -67,18 +67,18 @@ userSchema.pre<IUser>("save", async function (next) {
 });
 
 // Compare password method
-// userSchema.methods.comparePassword = async function (
-//   candidatePassword: string
-// ): Promise<boolean> {
-//   return await bcrypt.compare(candidatePassword, this.password);
-// };
+userSchema.methods.comparePassword = async function (
+  candidatePassword: string
+): Promise<boolean> {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 
-userSchema.method(
-  "comparePassword",
-  async function comparePassword(candidatePassword: string): Promise<boolean> {
-    return await bcrypt.compare(candidatePassword, this.password);
-  }
-);
+// userSchema.method(
+//   "comparePassword",
+//   async function comparePassword(candidatePassword: string): Promise<boolean> {
+//     return await bcrypt.compare(candidatePassword, this.password);
+//   }
+// );
 
 // const User = mongoose.model<IUser>("User", userSchema);
 const User = mongoose.model<IUser>("User", userSchema);

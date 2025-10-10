@@ -4,6 +4,7 @@ import express, {
   type Response,
 } from "express";
 import "dotenv/config";
+import cookieParser from "cookie-parser";
 import { connectDatabase } from "./config/databaseConn.ts";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.ts";
 import authRouter from "./routes/auth.routes.ts";
@@ -12,6 +13,7 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use("/auth", authRouter);
 app.get("/", (req: Request, res: Response, next: NextFunction) => {
