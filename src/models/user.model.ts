@@ -1,16 +1,8 @@
-import mongoose, { Model } from "mongoose";
+import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import type { IUser, UserMethods } from "../types/user.ts";
+import type { IUser } from "../types/user.ts";
 
-// const angel: IStudent = {
-//     name: "angel",
-//     class: 24,
-//     subjects: "english"
-// }
-
-// console.log(angel)
-
-const userSchema = new mongoose.Schema<IUser, Model<IUser>, UserMethods>(
+const userSchema = new mongoose.Schema<IUser>(
   {
     firstName: {
       type: String,
@@ -87,32 +79,6 @@ userSchema.method(
     return await bcrypt.compare(candidatePassword, this.password);
   }
 );
-
-// // Generate Access Token (short-lived: 15 minutes)
-// userSchema.methods.generateAccessToken = function (): string {
-//   const payload: ITokenPayload = {
-//     userId: this._id.toString(),
-//     email: this.email,
-//     role: this.role,
-//   };
-
-//   return jwt.sign(payload, process.env.JWT_ACCESS_SECRET as string, {
-//     expiresIn: '15m', // 15 minutes
-//   });
-// };
-
-// // Generate Refresh Token (long-lived: 7 days)
-// userSchema.methods.generateRefreshToken = function (): string {
-//   const payload: ITokenPayload = {
-//     userId: this._id.toString(),
-//     email: this.email,
-//     role: this.role,
-//   };
-
-//   return jwt.sign(payload, process.env.JWT_REFRESH_SECRET as string, {
-//     expiresIn: '7d', // 7 days
-//   });
-// };
 
 // const User = mongoose.model<IUser>("User", userSchema);
 const User = mongoose.model<IUser>("User", userSchema);
