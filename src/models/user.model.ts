@@ -25,7 +25,6 @@ const userSchema = new mongoose.Schema<IUser>(
       type: String,
       required: [true, "Password is required"],
       minlength: 8,
-      select: false, // Don't return password by default
     },
     role: {
       type: String,
@@ -73,14 +72,6 @@ userSchema.methods.comparePassword = async function (
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// userSchema.method(
-//   "comparePassword",
-//   async function comparePassword(candidatePassword: string): Promise<boolean> {
-//     return await bcrypt.compare(candidatePassword, this.password);
-//   }
-// );
-
-// const User = mongoose.model<IUser>("User", userSchema);
 const User = mongoose.model<IUser>("User", userSchema);
 
 export default User;
