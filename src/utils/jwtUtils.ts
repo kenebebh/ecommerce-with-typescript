@@ -85,7 +85,7 @@ export const clearAuthCookies = (res: Response) => {
     httpOnly: true,
     secure: isProduction, // Use secure cookies in production
     sameSite: "strict",
-    path: "/auth/refresh", // CRUCIAL: Must specify the path to clear the restricted cookie
+    path: "/api/auth/refresh", // CRUCIAL: Must specify the path to clear the restricted cookie
   });
 
   console.log("[Cookie Service] Access and Refresh cookies cleared.");

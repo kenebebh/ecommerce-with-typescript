@@ -25,7 +25,7 @@ const PORT = 3000;
 app.use(express.json());
 app.use(cookieParser());
 
-app.use("/auth", authRouter);
+app.use("/api/auth", authRouter);
 app.get("/", (req: Request, res: Response, next: NextFunction) => {
   console.log(req.accepts);
   res.send("Hello World!");

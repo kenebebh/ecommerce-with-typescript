@@ -123,9 +123,7 @@ export const logoutUser = async (
 
     if (!accessToken) {
       // If no access token is present, we clear the remaining cookies just in case.
-      res.clearCookie("accessToken");
-      res.clearCookie("refreshToken", { path: "/auth/refresh" });
-      // Send successful response even if token is missing (idempotent logout)
+      clearAuthCookies(res);
       return res
         .status(200)
         .json({ message: "User logged out successfully (no token found)." });
