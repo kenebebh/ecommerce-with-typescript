@@ -1,4 +1,3 @@
-// import { IApiResponse, IAuthResponse } from './../types/index';
 import type { NextFunction, Request, Response } from "express";
 import User from "../models/user.model.ts";
 import type { IUser } from "../types/user.ts";
@@ -13,6 +12,9 @@ import {
   decodeRefreshTokenPayload,
 } from "../utils/jwtUtils.ts";
 import { deleteSessionFromDB } from "../services/sesionService.ts";
+// import { getVerifyEmailTemplate } from "../utils/emailTemplates.ts";
+// import { generateVerificationCode } from "../utils/generateVerificationCode.ts";
+// import sendMail from "../utils/sendMail.ts";
 
 export const createUser = async (
   req: Request<{}, {}, IUser, {}>,
@@ -41,6 +43,21 @@ export const createUser = async (
       phoneNumber,
       address,
     });
+
+    // //create verification code
+    // const verificationCode = generateVerificationCode();
+
+    // //create url for verification
+    // const verificationLink = `${process.env.FRONTEND_URL}/verify-email?code=${verificationCode}`;
+
+    // //send verification email
+    // const { data, error } = await sendMail({
+    //   to: user.email,
+    //   ...getVerifyEmailTemplate(verificationLink),
+    // });
+
+    // console.log(data);
+    // console.log(error);
 
     //create session
     const session = await Session.create({

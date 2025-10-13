@@ -9,6 +9,16 @@ import { connectDatabase } from "./config/databaseConn.ts";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.ts";
 import authRouter from "./routes/auth.routes.ts";
 
+// import crypto from "crypto";
+
+// // Generate 32 random bytes
+// const randomBytes = crypto.randomBytes(32);
+// console.log(randomBytes);
+
+// // Convert to hexadecimal string (readable format)
+// const verificationCode = randomBytes.toString("hex");
+// console.log(verificationCode);
+
 const app = express();
 const PORT = 3000;
 
@@ -42,3 +52,7 @@ const startServer = async () => {
 };
 
 startServer();
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
