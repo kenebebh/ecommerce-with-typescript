@@ -6,6 +6,7 @@ import {
   generateRefreshToken,
 } from "../utils/generateToken.ts";
 import Session from "../models/session.model.ts";
+import { VerificationCode } from "../models/verificationCode.model.ts";
 import {
   decodeAccessTokenPayload,
   clearAuthCookies,
@@ -13,7 +14,8 @@ import {
 } from "../utils/jwtUtils.ts";
 import { deleteSessionFromDB } from "../services/sesionService.ts";
 // import { getVerifyEmailTemplate } from "../utils/emailTemplates.ts";
-// import { generateVerificationCode } from "../utils/generateVerificationCode.ts";
+import { generateVerificationCode } from "../utils/generateVerificationCode.ts";
+import { deleteVerificationCodeFromDB } from "../services/verificationCodeService.ts";
 // import sendMail from "../utils/sendMail.ts";
 
 export const createUser = async (
@@ -44,8 +46,17 @@ export const createUser = async (
       address,
     });
 
-    // //create verification code
-    // const verificationCode = generateVerificationCode();
+    //create verification code
+    const uniqueCode = generateVerificationCode();
+
+    const verificationCode = await VerificationCode.create({
+      code: uniqueCode,
+      userId: user._id,
+      type: "emailVerification",
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), //24 hours
+    });
+
+    console.log(verificationCode);
 
     // //create url for verification
     // const verificationLink = `${process.env.FRONTEND_URL}/verify-email?code=${verificationCode}`;
@@ -79,6 +90,52 @@ export const createUser = async (
       error instanceof Error ? error.message : "Unknown error occurred";
 
     next(errorMessage);
+  }
+};
+
+export const verifyUserEmail = async (
+  req: Request<{}, {}, { code: string }, {}>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { code } = req.body;
+
+    const verificationCode = await VerificationCode.findOne({ code });
+
+    if (!verificationCode) {
+      res.status(400);
+      throw new Error(
+        "No verification code found. Please request for verification again"
+      );
+    }
+
+    if (new Date(verificationCode.expiresAt) < new Date()) {
+      // Code expired.
+      await deleteVerificationCodeFromDB(verificationCode.code);
+      return res.status(401).json({
+        message: "Your code has expired. Please request for verification again",
+      });
+    }
+
+    const user = await User.findOne({ _id: verificationCode.userId });
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+
+    user.verified = true;
+    await user.save();
+
+    //delete the used verification code
+    await VerificationCode.deleteOne({ _id: verificationCode._id });
+
+    res
+      .status(200)
+      .json({ message: "Email verified successfully", data: user });
+  } catch (error) {
+    next(error);
   }
 };
 

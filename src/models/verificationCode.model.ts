@@ -1,6 +1,6 @@
 import mongoose, { SchemaTypes } from "mongoose";
 import type { IVerificationCode } from "../types/verificationCode.ts";
-import { VerificationCodeType } from "../types/verificationCode.ts";
+// import { VerificationCodeType } from "../types/verificationCode.ts";
 
 const VerificationCodeSchema = new mongoose.Schema<IVerificationCode>(
   {
@@ -15,14 +15,15 @@ const VerificationCodeSchema = new mongoose.Schema<IVerificationCode>(
       ref: "User",
       required: [true, "User ID is required"],
     },
-
-    // The purpose of the code
     type: {
       type: String,
-      enum: Object.values(VerificationCodeType), // Use the values from the enum
+      enum: ["emailVerification", "resetPassword"],
       required: true,
     },
-
+    createdAt: {
+      type: Date,
+      default: Date.now(),
+    },
     // The expiration time for the code
     expiresAt: {
       type: Date,
