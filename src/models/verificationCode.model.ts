@@ -1,14 +1,13 @@
 import mongoose, { SchemaTypes } from "mongoose";
+import { VerificationCodeType } from "../types/verificationCode.ts";
 import type { IVerificationCode } from "../types/verificationCode.ts";
-// import { VerificationCodeType } from "../types/verificationCode.ts";
 
 const VerificationCodeSchema = new mongoose.Schema<IVerificationCode>(
   {
-    // The generated verification or reset code
     code: {
       type: String,
       required: true,
-      unique: true, // Ensure no two active codes are the same
+      unique: true,
     },
     userId: {
       type: SchemaTypes.ObjectId,
@@ -17,27 +16,21 @@ const VerificationCodeSchema = new mongoose.Schema<IVerificationCode>(
     },
     type: {
       type: String,
-      enum: ["emailVerification", "resetPassword"],
+      enum: Object.values(VerificationCodeType),
       required: true,
     },
-    createdAt: {
-      type: Date,
-      default: Date.now(),
-    },
-    // The expiration time for the code
     expiresAt: {
       type: Date,
       required: true,
     },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt timestamps
+    timestamps: true, // This adds createdAt and updatedAt automatically
   }
 );
 
 VerificationCodeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-// Export the model
 export const VerificationCode = mongoose.model<IVerificationCode>(
   "VerificationCode",
   VerificationCodeSchema,
