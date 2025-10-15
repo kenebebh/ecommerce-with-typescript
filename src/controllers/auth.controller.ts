@@ -13,12 +13,15 @@ import {
   decodeRefreshTokenPayload,
 } from "../utils/jwtUtils.ts";
 import { deleteSessionFromDB } from "../services/sesionService.ts";
-// import { getVerifyEmailTemplate } from "../utils/emailTemplates.ts";
+import {
+  getPasswordResetTemplate,
+  getVerifyEmailTemplate,
+} from "../utils/emailTemplates.ts";
 import { generateVerificationCode } from "../utils/generateVerificationCode.ts";
 import { deleteVerificationCodeFromDB } from "../services/verificationCodeService.ts";
 import { VerificationCodeType } from "../types/verificationCode.ts";
 import { oneDayFromNow, tenMinutesFromNow } from "../utils/timeUtils.ts";
-// import sendMail from "../utils/sendMail.ts";
+import { sendMail } from "../utils/sendMail.ts";
 
 export const createUser = async (
   req: Request<{}, {}, IUser, {}>,
@@ -58,19 +61,18 @@ export const createUser = async (
       expiresAt: oneDayFromNow(),
     });
 
-    console.log(verificationCode);
-
     // //create url for verification
-    // const verificationLink = `${process.env.FRONTEND_URL}/verify-email?code=${verificationCode}`;
+    const verificationLink = `${process.env.FRONTEND_URL}/verify-email/${verificationCode}`;
 
     // //send verification email
-    // const { data, error } = await sendMail({
-    //   to: user.email,
-    //   ...getVerifyEmailTemplate(verificationLink),
-    // });
+    const { data, error } = await sendMail({
+      to: user.email,
+      ...getVerifyEmailTemplate(verificationLink),
+    });
 
-    // console.log(data);
-    // console.log(error);
+    if (error) {
+      return res.status(400).json({ error });
+    }
 
     //create session
     const session = await Session.create({
@@ -86,6 +88,7 @@ export const createUser = async (
     res.status(201).json({
       message: "User Created Succesfully",
       data: user,
+      resendResponse: data,
     });
   } catch (error) {
     const errorMessage =
@@ -167,8 +170,17 @@ export const forgotPassword = async (
     });
 
     //send user an email with this code
+    const resetPasswordLink = `${process.env.FRONTEND_URL}/reset-password/${verificationCode}`;
 
-    console.log(verificationCode);
+    // //send verification email
+    const { error } = await sendMail({
+      to: user.email,
+      ...getPasswordResetTemplate(resetPasswordLink),
+    });
+
+    if (error) {
+      return res.status(400).json({ error });
+    }
 
     res.status(200).json({
       message:
