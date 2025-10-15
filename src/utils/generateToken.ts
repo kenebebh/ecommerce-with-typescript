@@ -17,7 +17,6 @@ const generateAccessToken = (
     }
   );
 
-  console.log("access token", accessToken);
   // 2. Set the token as an HTTP-only cookie
   res.cookie("accessToken", accessToken, {
     httpOnly: true, // Prevents client-side JavaScript access
@@ -39,8 +38,6 @@ const generateRefreshToken = (
   const refreshToken = jwt.sign({ sessionId }, refreshTokenSecret, {
     expiresIn: "30d", // JWT expires after 30 days
   });
-
-  console.log("refresh token", refreshToken);
 
   // 2. Set the token as an HTTP-only cookie
   res.cookie("refreshToken", refreshToken, {

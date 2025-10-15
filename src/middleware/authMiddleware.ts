@@ -11,11 +11,10 @@ export const protect = async (
 
   if (accessToken) {
     try {
-      const { userId } = decodeAccessTokenPayload(accessToken);
+      const { userId, sessionId } = decodeAccessTokenPayload(accessToken);
 
       req.user = await User.findById(userId).select("-password");
-
-      // console.log(req.user);
+      req.sessionId = sessionId;
 
       next();
     } catch (error) {

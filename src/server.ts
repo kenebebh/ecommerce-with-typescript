@@ -7,7 +7,9 @@ import "dotenv/config";
 import cookieParser from "cookie-parser";
 import { connectDatabase } from "./config/databaseConn.ts";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.ts";
+import { protect } from "./middleware/authMiddleware.ts";
 import authRouter from "./routes/auth.routes.ts";
+import userRouter from "./routes/user.routes.ts";
 
 const app = express();
 const PORT = 3000;
@@ -16,8 +18,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
+app.use("/api/user", protect, userRouter);
 app.get("/", (req: Request, res: Response, next: NextFunction) => {
-  console.log(req.accepts);
   res.send("Hello World!");
   next();
 });
