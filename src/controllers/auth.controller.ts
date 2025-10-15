@@ -114,7 +114,7 @@ export const verifyUserEmail = async (
 
     if (new Date(verificationCode.expiresAt) < new Date()) {
       // Code expired.
-      await deleteVerificationCodeFromDB(verificationCode.code);
+      await deleteVerificationCodeFromDB(verificationCode._id.toString());
       return res.status(401).json({
         message: "Your code has expired. Please request for verification again",
       });
@@ -131,7 +131,7 @@ export const verifyUserEmail = async (
     await user.save();
 
     //delete the used verification code
-    await VerificationCode.deleteOne({ _id: verificationCode._id });
+    await deleteVerificationCodeFromDB(verificationCode._id.toString());
 
     res
       .status(200)
@@ -169,6 +169,60 @@ export const forgotPassword = async (
     //send user an email with this code
 
     console.log(verificationCode);
+
+    res.status(200).json({
+      message:
+        "Please check your inbox, and follow the next steps to change your password",
+    });
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    next(errorMessage);
+  }
+};
+
+export const resetPassword = async (
+  req: Request<{ code: string }, {}, { newPassword: string }, {}>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { code } = req.params;
+
+    const { newPassword } = req.body;
+
+    const verificationCode = await VerificationCode.findOne({ code });
+
+    if (!verificationCode) {
+      res.status(400);
+      throw new Error(
+        "No verification code found. Please request for password reset again"
+      );
+    }
+
+    if (new Date(verificationCode.expiresAt) < new Date()) {
+      // Code expired.
+      await deleteVerificationCodeFromDB(verificationCode._id.toString());
+      return res.status(401).json({
+        message:
+          "Your code has expired. Please request for password reset again",
+      });
+    }
+
+    const user = await User.findOne({ _id: verificationCode.userId });
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User not Found");
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    await deleteVerificationCodeFromDB(verificationCode._id.toString());
+
+    res.status(200).json({ message: "Password reset Successful", data: user });
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
