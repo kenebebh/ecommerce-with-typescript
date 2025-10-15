@@ -17,7 +17,7 @@ import { deleteSessionFromDB } from "../services/sesionService.ts";
 import { generateVerificationCode } from "../utils/generateVerificationCode.ts";
 import { deleteVerificationCodeFromDB } from "../services/verificationCodeService.ts";
 import { VerificationCodeType } from "../types/verificationCode.ts";
-import { oneDayFromNow } from "../utils/timeUtils.ts";
+import { oneDayFromNow, tenMinutesFromNow } from "../utils/timeUtils.ts";
 // import sendMail from "../utils/sendMail.ts";
 
 export const createUser = async (
@@ -138,6 +138,42 @@ export const verifyUserEmail = async (
       .json({ message: "Email verified successfully", data: user });
   } catch (error) {
     next(error);
+  }
+};
+
+export const forgotPassword = async (
+  req: Request<{}, {}, { email: string }, {}>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User with this email does not exist");
+    }
+
+    //create verification code
+    const uniqueCode = generateVerificationCode();
+
+    const verificationCode = await VerificationCode.create({
+      code: uniqueCode,
+      userId: user._id,
+      type: VerificationCodeType.RESET_PASSWORD,
+      expiresAt: tenMinutesFromNow(),
+    });
+
+    //send user an email with this code
+
+    console.log(verificationCode);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
+    next(errorMessage);
   }
 };
 

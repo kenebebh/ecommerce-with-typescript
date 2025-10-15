@@ -3,6 +3,9 @@ export const MS_IN_HOUR = 60 * MS_IN_MINUTE;
 export const MS_IN_DAY = 24 * MS_IN_HOUR;
 export const MS_IN_YEAR = 365 * MS_IN_DAY; // Approximation
 
+export const tenMinutesFromNow = (): number => {
+  return Date.now() + 10 * MS_IN_MINUTE;
+};
 /**
  * Calculates a timestamp 15 minutes from the current time.
  * @returns {number} Time in milliseconds from the epoch.
