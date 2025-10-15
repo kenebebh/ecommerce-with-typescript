@@ -16,6 +16,8 @@ import { deleteSessionFromDB } from "../services/sesionService.ts";
 // import { getVerifyEmailTemplate } from "../utils/emailTemplates.ts";
 import { generateVerificationCode } from "../utils/generateVerificationCode.ts";
 import { deleteVerificationCodeFromDB } from "../services/verificationCodeService.ts";
+import { VerificationCodeType } from "../types/verificationCode.ts";
+import { oneDayFromNow } from "../utils/timeUtils.ts";
 // import sendMail from "../utils/sendMail.ts";
 
 export const createUser = async (
@@ -52,8 +54,8 @@ export const createUser = async (
     const verificationCode = await VerificationCode.create({
       code: uniqueCode,
       userId: user._id,
-      type: "emailVerification",
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), //24 hours
+      type: VerificationCodeType.EMAIL_VERIFICATION,
+      expiresAt: oneDayFromNow(),
     });
 
     console.log(verificationCode);
@@ -94,12 +96,12 @@ export const createUser = async (
 };
 
 export const verifyUserEmail = async (
-  req: Request<{}, {}, { code: string }, {}>,
+  req: Request<{ code: string }, {}, {}, {}>,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { code } = req.body;
+    const { code } = req.params;
 
     const verificationCode = await VerificationCode.findOne({ code });
 

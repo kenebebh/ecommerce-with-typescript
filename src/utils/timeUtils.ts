@@ -11,6 +11,10 @@ export const fifteenMinutesFromNow = (): number => {
   return Date.now() + 15 * MS_IN_MINUTE;
 };
 
+export const oneDayFromNow = (): number => {
+  return Date.now() + MS_IN_DAY;
+};
+
 /**
  * Calculates a timestamp 30 days from the current time.
  * @returns {number} Time in milliseconds from the epoch.
