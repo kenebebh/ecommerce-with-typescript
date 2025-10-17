@@ -7,5 +7,8 @@ declare global {
       user?: IUser; // or whatever your User type is
       sessionId: mongoose.Types.ObjectId | string;
     }
+    interface Locals {
+      paginatedResults?: PaginatedResults<any>;
+    }
   }
 }

@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
-app.use("/api/user", protect, userRouter);
+app.use("/api/users", protect, userRouter);
 app.get("/", (_, res: Response, next: NextFunction) => {
   res.send("Hello World!");
   next();
