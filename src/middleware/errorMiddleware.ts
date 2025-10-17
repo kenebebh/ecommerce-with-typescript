@@ -25,12 +25,7 @@ const notFound = (req: Request, res: Response, next: NextFunction): void => {
  * Centralized error handling middleware.
  * This function takes 4 arguments, which is how Express identifies an error handler.
  */
-const errorHandler = (
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+const errorHandler = (err: Error, _: Request, res: Response): void => {
   // Determine the status code. If the response status is still 200 (OK), it means
   // the error was thrown outside of a custom status setting, so we default to 500 (Server Error).
   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;

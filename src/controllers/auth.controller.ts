@@ -95,12 +95,12 @@ export const createUser = async (
 };
 
 export const verifyUserEmail = async (
-  req: Request<{ code: string }, {}, {}, {}>,
+  req: Request<{}, {}, { code: string }, {}>,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { code } = req.params;
+    const { code } = req.body;
 
     const verificationCode = await VerificationCode.findOne({ code });
 
@@ -188,12 +188,13 @@ export const forgotPassword = async (
 };
 
 export const verifyResetOTP = async (
-  req: Request<{}, {}, { email: string; code: string }, {}>,
+  req: Request<{}, {}, { code: string }, { email: string }>,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { email, code } = req.body;
+    const { email } = req.query;
+    const { code } = req.body;
 
     // Validate input
     if (!email || !code) {
@@ -252,14 +253,15 @@ export const resetPassword = async (
   req: Request<
     {},
     {},
-    { email: string; code: string; newPassword: string },
-    {}
+    { newPassword: string },
+    { email: string; code: string }
   >,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { email, code, newPassword } = req.body;
+    const { email, code } = req.query;
+    const { newPassword } = req.body;
 
     // Validate input
     if (!email || !code || !newPassword) {
@@ -278,7 +280,7 @@ export const resetPassword = async (
 
     if (!user) {
       res.status(400);
-      throw new Error("Invalid request");
+      throw new Error("Invalid request, User not found");
     }
 
     // Find and verify the code one more time

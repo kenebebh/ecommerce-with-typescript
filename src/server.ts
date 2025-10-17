@@ -1,8 +1,4 @@
-import express, {
-  type NextFunction,
-  type Request,
-  type Response,
-} from "express";
+import express, { type NextFunction, type Response } from "express";
 import "dotenv/config";
 import cookieParser from "cookie-parser";
 import { connectDatabase } from "./config/databaseConn.ts";
@@ -19,7 +15,7 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
 app.use("/api/user", protect, userRouter);
-app.get("/", (req: Request, res: Response, next: NextFunction) => {
+app.get("/", (_, res: Response, next: NextFunction) => {
   res.send("Hello World!");
   next();
 });

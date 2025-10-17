@@ -16,9 +16,9 @@ authRouter.post("/create-user", createUser);
 authRouter.post("/login", loginUser);
 authRouter.post("/logout", logoutUser);
 authRouter.get("/refresh", refreshAccessToken);
-authRouter.post("/verify-email/:code", verifyUserEmail);
+authRouter.post("/verify-email", verifyUserEmail);
 authRouter.post("/forgot-password", forgotPassword);
-authRouter.post("/verify-reset-otp", verifyResetOTP); // Step 2
+authRouter.post("/verify-reset-otp", verifyResetOTP);
 authRouter.post("/reset-password", resetPassword);
 
 export default authRouter;
