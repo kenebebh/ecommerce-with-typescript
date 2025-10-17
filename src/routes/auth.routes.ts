@@ -7,6 +7,7 @@ import {
   refreshAccessToken,
   resetPassword,
   verifyUserEmail,
+  verifyResetOTP,
 } from "../controllers/auth.controller.ts";
 
 const authRouter = Router();
@@ -17,6 +18,7 @@ authRouter.post("/logout", logoutUser);
 authRouter.get("/refresh", refreshAccessToken);
 authRouter.post("/verify-email/:code", verifyUserEmail);
 authRouter.post("/forgot-password", forgotPassword);
-authRouter.post("/reset-password/:code", resetPassword);
+authRouter.post("/verify-reset-otp", verifyResetOTP); // Step 2
+authRouter.post("/reset-password", resetPassword);
 
 export default authRouter;

@@ -54,20 +54,17 @@ export const createUser = async (
     //create verification code
     const uniqueCode = generateVerificationCode();
 
-    const verificationCode = await VerificationCode.create({
+    await VerificationCode.create({
       code: uniqueCode,
       userId: user._id,
       type: VerificationCodeType.EMAIL_VERIFICATION,
       expiresAt: oneDayFromNow(),
     });
 
-    // //create url for verification
-    const verificationLink = `${process.env.FRONTEND_URL}/verify-email/${verificationCode}`;
-
     // //send verification email
-    const { data, error } = await sendMail({
+    const { error } = await sendMail({
       to: user.email,
-      ...getVerifyEmailTemplate(verificationLink),
+      ...getVerifyEmailTemplate(uniqueCode),
     });
 
     if (error) {
@@ -88,7 +85,6 @@ export const createUser = async (
     res.status(201).json({
       message: "User Created Succesfully",
       data: user,
-      resendResponse: data,
     });
   } catch (error) {
     const errorMessage =
@@ -162,20 +158,17 @@ export const forgotPassword = async (
     //create verification code
     const uniqueCode = generateVerificationCode();
 
-    const verificationCode = await VerificationCode.create({
+    await VerificationCode.create({
       code: uniqueCode,
       userId: user._id,
       type: VerificationCodeType.RESET_PASSWORD,
       expiresAt: tenMinutesFromNow(),
     });
 
-    //send user an email with this code
-    const resetPasswordLink = `${process.env.FRONTEND_URL}/reset-password/${verificationCode}`;
-
     // //send verification email
     const { error } = await sendMail({
       to: user.email,
-      ...getPasswordResetTemplate(resetPasswordLink),
+      ...getPasswordResetTemplate(uniqueCode),
     });
 
     if (error) {
@@ -194,51 +187,140 @@ export const forgotPassword = async (
   }
 };
 
-export const resetPassword = async (
-  req: Request<{ code: string }, {}, { newPassword: string }, {}>,
+export const verifyResetOTP = async (
+  req: Request<{}, {}, { email: string; code: string }, {}>,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { code } = req.params;
+    const { email, code } = req.body;
 
-    const { newPassword } = req.body;
+    // Validate input
+    if (!email || !code) {
+      res.status(400);
+      throw new Error("Email and code are required");
+    }
 
-    const verificationCode = await VerificationCode.findOne({ code });
+    // Find user
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      res.status(400);
+      throw new Error("Invalid email or code");
+    }
+
+    // Find verification code for this user
+    const verificationCode = await VerificationCode.findOne({
+      code: code.trim(),
+      userId: user._id,
+      type: VerificationCodeType.RESET_PASSWORD,
+    });
 
     if (!verificationCode) {
       res.status(400);
-      throw new Error(
-        "No verification code found. Please request for password reset again"
-      );
+      throw new Error("Invalid or expired code");
     }
 
+    // Check if code has expired
     if (new Date(verificationCode.expiresAt) < new Date()) {
-      // Code expired.
       await deleteVerificationCodeFromDB(verificationCode._id.toString());
-      return res.status(401).json({
-        message:
-          "Your code has expired. Please request for password reset again",
-      });
+      res.status(401);
+      throw new Error("Code has expired. Please request a new one.");
     }
 
-    const user = await User.findOne({ _id: verificationCode.userId });
-
-    if (!user) {
-      res.status(404);
-      throw new Error("User not Found");
-    }
-
-    user.password = newPassword;
-    await user.save();
-
-    await deleteVerificationCodeFromDB(verificationCode._id.toString());
-
-    res.status(200).json({ message: "Password reset Successful", data: user });
+    // OTP is valid!
+    // Return success - frontend will now show the "new password" form
+    res.status(200).json({
+      success: true,
+      message: "Code verified successfully. You can now reset your password.",
+      // Return this so frontend can send it with the password reset
+      verificationId: verificationCode._id.toString(),
+    });
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
+    next(errorMessage);
+  }
+};
 
+/**
+ * STEP 3: RESET PASSWORD
+ * After OTP is verified, user can set new password
+ * Uses the verificationId from the previous step
+ */
+export const resetPassword = async (
+  req: Request<
+    {},
+    {},
+    { email: string; code: string; newPassword: string },
+    {}
+  >,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    // Validate input
+    if (!email || !code || !newPassword) {
+      res.status(400);
+      throw new Error("Email, code, and new password are required");
+    }
+
+    // Validate password strength
+    if (newPassword.length < 8) {
+      res.status(400);
+      throw new Error("Password must be at least 8 characters long");
+    }
+
+    // Find user
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      res.status(400);
+      throw new Error("Invalid request");
+    }
+
+    // Find and verify the code one more time
+    const verificationCode = await VerificationCode.findOne({
+      code: code.trim(),
+      userId: user._id,
+      type: VerificationCodeType.RESET_PASSWORD,
+    });
+
+    if (!verificationCode) {
+      res.status(400);
+      throw new Error("Invalid or expired code");
+    }
+
+    // Check if code has expired
+    if (new Date(verificationCode.expiresAt) < new Date()) {
+      await deleteVerificationCodeFromDB(verificationCode._id.toString());
+      res.status(401);
+      throw new Error("Code has expired. Please request a new one.");
+    }
+
+    // Update password (assuming your User model hashes it with pre-save hook)
+    user.password = newPassword;
+    await user.save();
+
+    // Delete the verification code (one-time use)
+    await deleteVerificationCodeFromDB(verificationCode._id.toString());
+
+    // Optional: Delete all other reset codes for this user
+    await VerificationCode.deleteMany({
+      userId: user._id,
+      type: VerificationCodeType.RESET_PASSWORD,
+    });
+
+    res.status(200).json({
+      success: true,
+      message:
+        "Password reset successful! You can now log in with your new password.",
+    });
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
     next(errorMessage);
   }
 };
