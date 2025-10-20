@@ -27,9 +27,14 @@ export interface IProduct extends Document {
   inventory: IInventory;
   createdAt: Date;
   updatedAt: Date;
+
   // Virtual fields
-  available: number;
+  availableQuantity: number;
   isLowStock: boolean;
 
   hasSufficientStock(quantity: number): boolean;
+  findLowStock(): Promise<IProduct[]>;
+  reserveInventory(quantity: number): Promise<void>;
+  releaseInventory(quantity: number): Promise<void>;
+  deductInventory(quantity: number): Promise<void>;
 }

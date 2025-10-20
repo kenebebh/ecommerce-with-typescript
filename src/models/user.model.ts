@@ -49,6 +49,7 @@ const userSchema = new mongoose.Schema<IUser>(
   },
   {
     timestamps: true, // Adds createdAt and updatedAt automatically
+    toJSON: { virtuals: true },
   }
 );
 
@@ -71,6 +72,10 @@ userSchema.methods.comparePassword = async function (
 ): Promise<boolean> {
   return await bcrypt.compare(candidatePassword, this.password);
 };
+
+userSchema.virtual("fullName").get(function (this: IUser) {
+  return `${this.firstName} ${this.lastName}`;
+});
 
 const User = mongoose.model<IUser>("User", userSchema);
 

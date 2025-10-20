@@ -1,6 +1,7 @@
-import mongoose, { Schema, Model } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 import type { IInventory, IProduct, IProductImage } from "../types/product.ts";
+import { generateSlug } from "../utils/generateSlug.ts";
 
 // Image sub-schema
 const productImageSchema = new Schema<IProductImage>(
@@ -42,7 +43,6 @@ const inventorySchema = new Schema<IInventory>(
     },
     reserved: {
       type: Number,
-      required: true,
       min: 0,
       default: 0,
     },
@@ -67,10 +67,8 @@ const productSchema = new Schema<IProduct>(
     },
     slug: {
       type: String,
-      required: true,
       unique: true,
       lowercase: true,
-      trim: true,
     },
     description: {
       type: String,
@@ -120,30 +118,30 @@ const productSchema = new Schema<IProduct>(
   }
 );
 
-// Virtual field: available inventory
-productSchema.virtual("available").get(function (this: IProduct) {
+// Virtual field: availableQuantity inventory
+productSchema.virtual("availableQuantity").get(function (this: IProduct) {
   return Math.max(0, this.inventory.quantity - this.inventory.reserved);
 });
 
 // Virtual field: is low stock
 productSchema.virtual("isLowStock").get(function (this: IProduct) {
-  return this.available <= this.inventory.lowStockThreshold;
+  return this.availableQuantity <= this.inventory.lowStockThreshold;
 });
 
 // Indexes for performance
-productSchema.index({ name: "text", description: "text" }); // Text search
+productSchema.index({ name: "text" }); // Text search
 productSchema.index({ category: 1, price: 1 }); // Filter by category and sort by price
 productSchema.index({ slug: 1 }); // Fast slug lookup
 productSchema.index({ isActive: 1 }); // Filter active products
 productSchema.index({ "inventory.quantity": 1 }); // Stock queries
 
-// Pre-save middleware: Generate slug from name
+// Pre-save middleware: Generate slug from name using the utility function
 productSchema.pre("save", function (next) {
-  if (this.isModified("name")) {
-    this.slug = this.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+  // Check if the product is new OR if the name was modified
+  if (this.isModified("name") || this.isNew) {
+    this.slug = generateSlug(this.name);
+    // NOTE: For advanced usage, you might need extra logic here to ensure
+    // the generated slug is globally unique by checking the database (e.g., appending a number).
   }
   next();
 });
@@ -153,14 +151,14 @@ productSchema.statics.findLowStock = function (): Promise<IProduct[]> {
   return this.aggregate([
     {
       $addFields: {
-        available: {
+        availableQuantity: {
           $subtract: ["$inventory.quantity", "$inventory.reserved"],
         },
       },
     },
     {
       $match: {
-        $expr: { $lte: ["$available", "$inventory.lowStockThreshold"] },
+        $expr: { $lte: ["$availableQuantity", "$inventory.lowStockThreshold"] },
         isActive: true,
       },
     },
@@ -171,7 +169,7 @@ productSchema.statics.findLowStock = function (): Promise<IProduct[]> {
 productSchema.methods.hasSufficientStock = function (
   quantity: number
 ): boolean {
-  return this.available >= quantity;
+  return this.availableQuantity >= quantity;
 };
 
 // Instance method: Reserve inventory
@@ -179,10 +177,12 @@ productSchema.methods.reserveInventory = async function (
   quantity: number
 ): Promise<void> {
   if (!this.hasSufficientStock(quantity)) {
-    throw new Error("Insufficient stock available");
+    throw new Error("Insufficient stock availableQuantity");
   }
 
   this.inventory.reserved += quantity;
+
+  this.inventory.reserved = this.inventory.reserved + quantity;
   await this.save();
 };
 
@@ -208,20 +208,17 @@ productSchema.methods.deductInventory = async function (
 };
 
 // Add custom statics to the model interface
-interface IProductModel extends Model<IProduct> {
-  findLowStock(): Promise<IProduct[]>;
-}
+// interface IProductModel extends Model<IProduct> {
+//   findLowStock(): Promise<IProduct[]>;
+// }
 
-const Product = mongoose.model<IProduct, IProductModel>(
-  "Product",
-  productSchema
-);
+const Product = mongoose.model<IProduct>("Product", productSchema);
 
 export default Product;
 
 // FEature
 // Inventory management built-in with quantity, reserved, and lowStockThreshold
-// Virtual fields: available (quantity - reserved) and isLowStock (auto-calculated)
+// Virtual fields: availableQuantity (quantity - reserved) and isLowStock (auto-calculated)
 // Auto-generated slug from product name for SEO-friendly URLs
 // Instance methods for inventory operations:
 
