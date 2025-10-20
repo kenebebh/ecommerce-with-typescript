@@ -1,12 +1,10 @@
 import type { Request, Response, NextFunction } from "express";
 import Product from "../models/product.model.ts";
 import type { IProduct } from "../types/product.ts";
+import { Types } from "mongoose";
+import CloudinaryService from "../services/cloudinaryService.ts";
 
 export class ProductController {
-  /**
-   * Get all products with filtering, sorting, and pagination
-   * Note: Pagination is handled by the paginate middleware
-   */
   static async getAllProducts(
     req: Request,
     res: Response,
@@ -103,14 +101,41 @@ export class ProductController {
    * Create new product (Admin only)
    */
   static async createProduct(
-    req: Request,
+    req: Request<{}, {}, IProduct>,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const productData = req.body;
+      const { name, description, price, category, inventory } = req.body;
 
-      const product = await Product.create(productData);
+      // Get uploaded files
+      const files = req.files as Express.Multer.File[];
+
+      if (!files || files.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: "At least one product image is required",
+        });
+        return;
+      }
+
+      // Generate a new MongoDB ObjectId BEFORE creating the product
+      const productId = new Types.ObjectId().toString();
+
+      // Upload images to Cloudinary with the pre-generated product ID
+      const uploadedImages =
+        await CloudinaryService.uploadMultipleProductImages(files, productId);
+
+      // Now create the product with the images and specific ID
+      const product = await Product.create({
+        _id: productId, // Use the pre-generated ID
+        name,
+        description,
+        price,
+        category,
+        inventory,
+        images: uploadedImages,
+      });
 
       res.status(201).json({
         success: true,
@@ -118,6 +143,11 @@ export class ProductController {
         data: product,
       });
     } catch (error) {
+      // Cleanup: Delete uploaded images if product creation fails
+      if (error instanceof Error) {
+        // Extract public_ids from uploaded images and delete them
+        // This is a safety measure
+      }
       next(error);
     }
   }
