@@ -33,7 +33,6 @@ export interface IProduct extends Document {
   isLowStock: boolean;
 
   hasSufficientStock(quantity: number): boolean;
-  findLowStock(): Promise<IProduct[]>;
   reserveInventory(quantity: number): Promise<void>;
   releaseInventory(quantity: number): Promise<void>;
   deductInventory(quantity: number): Promise<void>;

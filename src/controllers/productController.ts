@@ -346,7 +346,7 @@ export class ProductController {
           productId: product._id,
           productName: product.name,
           requestedQuantity: requestedQty,
-          availableStock: product.available,
+          availableStock: product.availableQuantity,
           isAvailable,
           isLowStock: product.isLowStock,
         },

@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Model, Schema } from "mongoose";
 
 import type { IInventory, IProduct, IProductImage } from "../types/product.ts";
 import { generateSlug } from "../utils/generateSlug.ts";
@@ -208,11 +208,14 @@ productSchema.methods.deductInventory = async function (
 };
 
 // Add custom statics to the model interface
-// interface IProductModel extends Model<IProduct> {
-//   findLowStock(): Promise<IProduct[]>;
-// }
+interface IProductModel extends Model<IProduct> {
+  findLowStock(): Promise<IProduct[]>;
+}
 
-const Product = mongoose.model<IProduct>("Product", productSchema);
+const Product = mongoose.model<IProduct, IProductModel>(
+  "Product",
+  productSchema
+);
 
 export default Product;
 
