@@ -4,7 +4,7 @@ import fs from "fs";
 import type { Request } from "express";
 
 // Create uploads directory if it doesn't exist
-const uploadsDir = "./uploads";
+const uploadsDir = "./src/uploads";
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
@@ -62,7 +62,6 @@ const upload = multer({
   fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
-    files: 1, // Only 1 file at a time
   },
 });
 

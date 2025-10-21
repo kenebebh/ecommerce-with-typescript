@@ -37,3 +37,12 @@ export interface IProduct extends Document {
   releaseInventory(quantity: number): Promise<void>;
   deductInventory(quantity: number): Promise<void>;
 }
+
+export interface IProductFormData {
+  name: string;
+  description: string;
+  price: string;
+  category: string;
+  quantity: string;
+  lowStockThreshold?: string;
+}
