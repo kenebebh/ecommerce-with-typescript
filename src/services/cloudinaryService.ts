@@ -81,7 +81,8 @@ class CloudinaryService {
   // Delete multiple images
   static async deleteMultipleImages(publicIds: string[]): Promise<void> {
     try {
-      await Promise.all(publicIds.map((id) => this.deleteImage(id)));
+      const deletePromises = publicIds.map((id) => this.deleteImage(id));
+      await Promise.all(deletePromises);
     } catch (error) {
       console.error("Error deleting multiple images:", error);
       throw error;

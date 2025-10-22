@@ -1,8 +1,12 @@
 import type { Request, Response, NextFunction } from "express";
 import Product from "../models/product.model.ts";
-import type { IProduct, IProductFormData } from "../types/product.ts";
-// import { Types } from "mongoose";
-// import CloudinaryService from "../services/cloudinaryService.ts";
+import type {
+  IProduct,
+  IProductFormData,
+  IProductImage,
+} from "../types/product.ts";
+import { Types } from "mongoose";
+import CloudinaryService from "../services/cloudinaryService.ts";
 
 export class ProductController {
   static async getAllProducts(
@@ -105,71 +109,92 @@ export class ProductController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
+    let uploadedImages: IProductImage[] = []; // Track uploaded images for cleanup
+
     try {
-      console.log(req.body);
-      console.log(req.files);
-      res.status(201).json({
-        success: true,
-        message: "Product creation endpoint hit",
-      });
+      const {
+        name,
+        description,
+        price,
+        category,
+        quantity,
+        lowStockThreshold,
+      } = req.body;
+
       // Reconstruct inventory object from flattened fields
       const inventory = {
-        quantity: req.body.quantity,
-        reserved: 0, // Always start at 0 for new products
-        lowStockThreshold: req.body.lowStockThreshold || 10,
+        quantity: parseInt(quantity),
+        reserved: 0,
+        lowStockThreshold: parseInt(lowStockThreshold) || 10,
       };
 
-      console.log("inventory:", inventory);
-      //   const { name, description, price, category } = req.body;
+      // Get uploaded files
+      const files = req.files as Express.Multer.File[];
 
-      // Reconstruct inventory object from flattened fields
-      // const inventory = {
-      //   quantity: parseInt(req.body['inventory.quantity']) || 0,
-      //   reserved: 0, // Always start at 0 for new products
-      //   lowStockThreshold: parseInt(req.body['inventory.lowStockThreshold']) || 10,
-      // };
-
-      //   // Get uploaded files
-      //   const files = req.files as Express.Multer.File[];
-
-      //   if (!files || files.length === 0) {
-      //     res.status(400).json({
-      //       success: false,
-      //       message: "At least one product image is required",
-      //     });
-      //     return;
-      //   }
-
-      //   // Generate a new MongoDB ObjectId BEFORE creating the product
-      //   const productId = new Types.ObjectId().toString();
-
-      //   // Upload images to Cloudinary with the pre-generated product ID
-      //   const uploadedImages =
-      //     await CloudinaryService.uploadMultipleProductImages(files, productId);
-
-      //   // Now create the product with the images and specific ID
-      //   const product = await Product.create({
-      //     _id: productId, // Use the pre-generated ID
-      //     name,
-      //     description,
-      //     price,
-      //     category,
-      //     inventory,
-      //     images: uploadedImages,
-      //   });
-
-      //   res.status(201).json({
-      //     success: true,
-      //     message: "Product created successfully",
-      //     data: product,
-      //   });
-    } catch (error) {
-      // Cleanup: Delete uploaded images if product creation fails
-      if (error instanceof Error) {
-        // Extract public_ids from uploaded images and delete them
-        // This is a safety measure
+      if (!files || files.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: "At least one product image is required",
+        });
+        return;
       }
+
+      // Generate a new MongoDB ObjectId BEFORE creating the product
+      const productId = new Types.ObjectId().toString();
+
+      // Upload images to Cloudinary with the pre-generated product ID
+      uploadedImages = await CloudinaryService.uploadMultipleProductImages(
+        files,
+        productId
+      );
+
+      // Now create the product with the images and specific ID
+      const product = await Product.create({
+        _id: productId,
+        name,
+        description,
+        price,
+        category,
+        inventory,
+        images: uploadedImages,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "Product created successfully",
+        data: product,
+      });
+    } catch (error) {
+      // Cleanup logic
+      try {
+        // 1. Delete local files (if they still exist)
+        if (req.files) {
+          const files = req.files as Express.Multer.File[];
+          files.forEach((file) => {
+            CloudinaryService.deleteLocalFile(file.path);
+          });
+        }
+
+        // 2. Delete uploaded images from Cloudinary (if upload succeeded)
+        if (uploadedImages.length > 0) {
+          const publicIds = uploadedImages.map((img) => img.public_id);
+          await CloudinaryService.deleteMultipleImages(publicIds);
+          console.log(`Cleaned up ${publicIds.length} images from Cloudinary`);
+        }
+      } catch (cleanupError) {
+        // Log cleanup errors but don't throw them
+        console.error("Error during cleanup:", cleanupError);
+      }
+
       next(error);
+    } finally {
+      // Always attempt to delete local files
+      if (req.files) {
+        const files = req.files as Express.Multer.File[];
+        files.forEach((file) => {
+          CloudinaryService.deleteLocalFile(file.path);
+        });
+      }
     }
   }
 

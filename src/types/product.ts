@@ -44,5 +44,5 @@ export interface IProductFormData {
   price: string;
   category: string;
   quantity: string;
-  lowStockThreshold?: string;
+  lowStockThreshold: string;
 }

@@ -131,7 +131,6 @@ productSchema.virtual("isLowStock").get(function (this: IProduct) {
 // Indexes for performance
 productSchema.index({ name: "text" }); // Text search
 productSchema.index({ category: 1, price: 1 }); // Filter by category and sort by price
-productSchema.index({ slug: 1 }); // Fast slug lookup
 productSchema.index({ isActive: 1 }); // Filter active products
 productSchema.index({ "inventory.quantity": 1 }); // Stock queries
 
