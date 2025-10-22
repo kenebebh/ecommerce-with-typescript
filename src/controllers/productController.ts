@@ -267,14 +267,7 @@ export class ProductController {
 
       // Update inventory fields
       if (quantity !== undefined) {
-        if (quantity < product.inventory.reserved) {
-          res.status(400).json({
-            success: false,
-            message: `Cannot set quantity below reserved amount (${product.inventory.reserved})`,
-          });
-          return;
-        }
-        product.inventory.quantity = quantity;
+        product.inventory.quantity += quantity;
       }
 
       if (lowStockThreshold !== undefined) {
@@ -296,7 +289,7 @@ export class ProductController {
   /**
    * Delete product (soft delete - set isActive to false)
    */
-  static async deleteProduct(
+  static async deactivateProduct(
     req: Request,
     res: Response,
     next: NextFunction
