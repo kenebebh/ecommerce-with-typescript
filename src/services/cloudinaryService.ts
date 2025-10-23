@@ -1,6 +1,7 @@
 import cloudinary from "../config/cloudinaryConfig.js";
 import fs from "fs";
 import type { IProductImage } from "../types/product.ts";
+import type { ICategoryImage } from "../types/category.ts";
 
 class CloudinaryService {
   // Delete local file helper
@@ -85,6 +86,32 @@ class CloudinaryService {
       await Promise.all(deletePromises);
     } catch (error) {
       console.error("Error deleting multiple images:", error);
+      throw error;
+    }
+  }
+
+  // Upload single category image
+  static async uploadSingleCategoryImage(
+    filePath: string,
+    identifier: string
+  ): Promise<ICategoryImage> {
+    try {
+      const uploadResult = await cloudinary.uploader.upload(filePath, {
+        folder: "categories",
+        public_id: `category_${identifier}__${Date.now()}`,
+        transformation: [
+          { width: 800, height: 800, crop: "limit" }, // Max dimensions
+          { quality: "auto:good", fetch_format: "auto" }, // Auto optimization
+        ],
+        resource_type: "image",
+      });
+
+      return {
+        public_id: uploadResult.public_id,
+        secure_url: uploadResult.secure_url,
+        asset_id: uploadResult.asset_id,
+      };
+    } catch (error) {
       throw error;
     }
   }
