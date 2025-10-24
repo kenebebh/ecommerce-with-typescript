@@ -5,6 +5,6 @@ import { protect } from "../middleware/authMiddleware.ts";
 
 const cartRouter = Router();
 
-cartRouter.post("/", protect, CartController.addToCart);
+cartRouter.post("/", protect, CartController.addProductToCart);
 
 export default cartRouter;

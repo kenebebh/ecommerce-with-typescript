@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import Cart from "../models/cart.model.ts";
 import Product from "../models/product.model.ts";
-import categoryRouter from "../routes/category.routes.ts";
 
 export class CartController {
   /**
@@ -17,11 +16,8 @@ export class CartController {
       const userId = req.user?._id;
 
       if (!userId) {
-        res.status(401).json({
-          success: false,
-          message: "User not authenticated",
-        });
-        return;
+        res.status(401);
+        throw new Error("User not authenticated");
       }
 
       // Find or create cart for user (this returns the document)
@@ -39,21 +35,19 @@ export class CartController {
   /**
    * Add item to cart
    */
-  static async addToCart(
+  static async addProductToCart(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const userId = req.user?._id;
-      const { productId, quantity } = req.body;
+
+      const { productId } = req.body;
 
       if (!userId) {
-        res.status(401).json({
-          success: false,
-          message: "User not authenticated",
-        });
-        return;
+        res.status(401);
+        throw new Error("User not authenticated");
       }
 
       // Validate input
@@ -82,10 +76,10 @@ export class CartController {
       }
 
       // Check stock availability
-      if (!product.hasSufficientStock(quantity)) {
+      if (!product.hasSufficientStock(1)) {
         res.status(400).json({
           success: false,
-          message: `Only ${product.availableQuantity} items available in stock`,
+          message: `Product is out of stock`,
         });
         return;
       }
@@ -93,27 +87,13 @@ export class CartController {
       // Find or create cart
       const cart = await Cart.findOrCreateCart(userId);
 
-      // Check if adding this quantity would exceed available stock
-      const currentQuantityInCart = cart.getItemQuantity(productId);
-      const totalQuantity = currentQuantityInCart + quantity;
-
-      if (!product.hasSufficientStock(totalQuantity)) {
-        res.status(400).json({
-          success: false,
-          message: `Cannot add ${quantity} more. Only ${
-            product.availableQuantity - currentQuantityInCart
-          } items can be added`,
-        });
-        return;
-      }
-
       // Add item to cart (uses current product price)
-      await cart.addItem(productId, quantity, product.price);
+      await cart.addItem(productId, 1, product.price);
 
       // Populate and return updated cart
       const updatedCart = await Cart.findById(cart._id).populate({
         path: "items.productId",
-        select: "name price images slug isActive availableQuantity",
+        select: "name price slug isActive ",
       });
 
       res.status(200).json({
@@ -124,6 +104,57 @@ export class CartController {
     } catch (error) {
       next(error);
     }
+  }
+
+  static async increaseProductQuantity(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const { productId } = req.params;
+    const userId = req.user?._id;
+
+    if (!userId) {
+      res.status(401);
+      throw new Error("User not authenticated");
+    }
+
+    // Validate input
+    if (!productId) {
+      res.status(400);
+      throw new Error("Product ID is required");
+    }
+
+    // Check if product exists
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+      return;
+    }
+
+    // Find or create cart
+    const cart = await Cart.findOrCreateCart(userId);
+
+    // Check if adding this quantity would exceed available stock
+    const currentQuantityInCart = cart.getItemQuantity(productId);
+    const totalQuantity = currentQuantityInCart + 1;
+
+    if (!product.hasSufficientStock(totalQuantity)) {
+      res.status(400).json({
+        success: false,
+        message: `Cannot add ${totalQuantity} more. Only ${
+          product.availableQuantity - currentQuantityInCart
+        } items can be added`,
+      });
+      return;
+    }
+
+    // Add item to cart (uses current product price)
+    await cart.addItem(productId, totalQuantity, product.price);
   }
 
   /**

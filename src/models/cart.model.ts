@@ -66,7 +66,6 @@ cartSchema.virtual("subtotal").get(function (this: ICart) {
 });
 
 // Indexes
-cartSchema.index({ userId: 1 }); // Fast user cart lookup
 cartSchema.index({ "items.productId": 1 }); // Fast product lookup in cart
 cartSchema.index({ updatedAt: 1 }); // For finding abandoned carts
 
