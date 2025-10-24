@@ -8,6 +8,7 @@ import authRouter from "./routes/auth.routes.ts";
 import userRouter from "./routes/user.routes.ts";
 import productRouter from "./routes/product.routes.ts";
 import categoryRouter from "./routes/category.routes.ts";
+import cartRouter from "./routes/cart.routes.ts";
 
 const app = express();
 const PORT = 3000;
@@ -20,6 +21,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/users", protect, userRouter);
 app.use("/api/products", productRouter);
 app.use("/api/categories", categoryRouter);
+app.use("/api/cart", cartRouter);
 app.get("/", (_, res: Response, next: NextFunction) => {
   res.send("Hello World!");
   next();

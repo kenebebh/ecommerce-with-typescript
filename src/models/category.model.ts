@@ -79,7 +79,7 @@ categorySchema.pre("save", function (next) {
 // Method to get full category path (e.g., "Electronics > Laptops")
 categorySchema.methods.getFullPath = async function (): Promise<string> {
   if (!this.parentCategory) {
-    return this.name;
+    return this.slug;
   }
 
   const parent = await Category.findById(this.parentCategory);
@@ -87,7 +87,7 @@ categorySchema.methods.getFullPath = async function (): Promise<string> {
     return this.name;
   }
 
-  return `${parent.name} > ${this.name}`;
+  return `${parent.slug} > ${this.slug}`;
 };
 
 // Indexes

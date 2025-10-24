@@ -50,11 +50,7 @@ export const createCategory = async (
         categoryId
       );
 
-      imageData = {
-        public_id: uploadResult.public_id,
-        secure_url: uploadResult.secure_url,
-        asset_id: uploadResult.asset_id,
-      };
+      imageData = uploadResult;
     }
 
     // Create category

@@ -11,8 +11,25 @@ export interface ICart {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
   items: ICartItem[];
-  totalItems: number;
-  subtotal: number;
   createdAt: Date;
   updatedAt: Date;
+
+  // Virtual fields
+  totalItems: number;
+  subtotal: number;
+
+  //methods
+  addItem(
+    productId: Types.ObjectId | string,
+    quantity: number,
+    price: number
+  ): Promise<ICart>;
+  updateItemQuantity(
+    productId: Types.ObjectId | string,
+    quantity: number
+  ): Promise<ICart>;
+  removeItem(productId: Types.ObjectId | string): Promise<ICart>;
+  clearCart(): Promise<ICart>;
+  hasProduct(productId: Types.ObjectId | string): boolean;
+  getItemQuantity(productId: Types.ObjectId | string): number;
 }
