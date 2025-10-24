@@ -77,6 +77,14 @@ export const createCategory = async (
     });
   } catch (error) {
     next(error);
+  } finally {
+    // Always attempt to delete local files
+    if (req.files) {
+      const files = req.files as Express.Multer.File[];
+      files.forEach((file) => {
+        CloudinaryService.deleteLocalFile(file.path);
+      });
+    }
   }
 };
 

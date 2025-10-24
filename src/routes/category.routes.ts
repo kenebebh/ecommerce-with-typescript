@@ -15,12 +15,7 @@ import { protect } from "../middleware/authMiddleware.ts";
 
 const categoryRouter = Router();
 
-categoryRouter.post(
-  "/",
-  protect,
-  upload.single("categoryImage"),
-  createCategory
-);
+categoryRouter.post("/", upload.single("categoryImage"), createCategory);
 categoryRouter.get("/", getAllCategories);
 categoryRouter.get("/slug/:slug", getCategoryBySlug);
 categoryRouter.get("/:id", getCategoryById);
