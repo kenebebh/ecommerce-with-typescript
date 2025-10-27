@@ -9,6 +9,7 @@ import userRouter from "./routes/user.routes.ts";
 import productRouter from "./routes/product.routes.ts";
 import categoryRouter from "./routes/category.routes.ts";
 import cartRouter from "./routes/cart.routes.ts";
+import orderRouter from "./routes/order.routes.ts";
 
 const app = express();
 const PORT = 3000;
@@ -22,6 +23,7 @@ app.use("/api/users", protect, userRouter);
 app.use("/api/products", productRouter);
 app.use("/api/categories", categoryRouter);
 app.use("/api/cart", cartRouter);
+app.use("/api/orders", orderRouter);
 app.get("/", (_, res: Response, next: NextFunction) => {
   res.send("Hello World!");
   next();
