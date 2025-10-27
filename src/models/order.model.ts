@@ -217,9 +217,7 @@ const orderSchema = new Schema<IOrder>(
 
 // Indexes
 orderSchema.index({ userId: 1, createdAt: -1 }); // User order history
-orderSchema.index({ orderNumber: 1 }); // Fast order lookup
 orderSchema.index({ status: 1, createdAt: -1 }); // Admin filtering
-orderSchema.index({ "payment.reference": 1 }); // Payment verification
 orderSchema.index({ createdAt: -1 }); // Recent orders
 
 // Pre-save middleware: Generate order number

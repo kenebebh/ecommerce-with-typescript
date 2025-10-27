@@ -71,7 +71,7 @@ export class OrderController {
         // Reserve inventory (within transaction)
         await Product.findByIdAndUpdate(
           product._id,
-          { $inc: { "inventory.reserved": item.quantity } },
+          { $inc: { "inventory.reserved": item.quantity } }, //increment inventory.reserved by item.quantity
           { session }
         );
 

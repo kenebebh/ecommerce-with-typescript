@@ -51,6 +51,7 @@ export type OrderStatus =
   | "failed"; // Payment failed
 
 export interface IOrder extends Document {
+  _id: Types.ObjectId;
   orderNumber: string;
   userId: Types.ObjectId;
   items: IOrderItem[];

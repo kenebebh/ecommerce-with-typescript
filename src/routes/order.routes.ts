@@ -5,14 +5,14 @@ import { adminOnly } from "../middleware/authMiddleware.ts";
 import paginate from "../middleware/paginate.ts";
 import Order from "../models/order.model.ts";
 
-const router = Router();
+const orderRouter = Router();
 
 /**
  * @route   GET /api/orders/admin/all
  * @desc    Get all orders with pagination
  * @access  Private/Admin
  */
-router.get(
+orderRouter.get(
   "/admin/all",
   protect,
   adminOnly,
@@ -27,7 +27,12 @@ router.get(
  * @desc    Get order statistics
  * @access  Private/Admin
  */
-router.get("/admin/stats", protect, adminOnly, OrderController.getOrderStats);
+orderRouter.get(
+  "/admin/stats",
+  protect,
+  adminOnly,
+  OrderController.getOrderStats
+);
 
 /**
  * @route   POST /api/orders
@@ -35,28 +40,32 @@ router.get("/admin/stats", protect, adminOnly, OrderController.getOrderStats);
  * @access  Private
  * @body    { shippingAddress: {...} }
  */
-router.post("/", protect, OrderController.createOrder);
+orderRouter.post("/", protect, OrderController.createOrder);
 
 /**
  * @route   GET /api/orders
  * @desc    Get all orders for logged-in user
  * @access  Private
  */
-router.get("/", protect, OrderController.getUserOrders);
+orderRouter.get("/", protect, OrderController.getUserOrders);
 
 /**
  * @route   GET /api/orders/:orderId
  * @desc    Get single order by ID
  * @access  Private
  */
-router.get("/:orderId", protect, OrderController.getOrderById);
+orderRouter.get("/:orderId", protect, OrderController.getOrderById);
 
 /**
  * @route   GET /api/orders/number/:orderNumber
  * @desc    Get order by order number
  * @access  Private
  */
-router.get("/number/:orderNumber", protect, OrderController.getOrderByNumber);
+orderRouter.get(
+  "/number/:orderNumber",
+  protect,
+  OrderController.getOrderByNumber
+);
 
 /**
  * @route   POST /api/orders/:orderId/cancel
@@ -64,7 +73,7 @@ router.get("/number/:orderNumber", protect, OrderController.getOrderByNumber);
  * @access  Private
  * @body    { reason?: string }
  */
-router.post("/:orderId/cancel", protect, OrderController.cancelOrder);
+orderRouter.post("/:orderId/cancel", protect, OrderController.cancelOrder);
 
 /**
  * @route   PATCH /api/orders/admin/:orderId/status
@@ -72,11 +81,11 @@ router.post("/:orderId/cancel", protect, OrderController.cancelOrder);
  * @access  Private/Admin
  * @body    { status: string, note?: string }
  */
-router.patch(
+orderRouter.patch(
   "/admin/:orderId/status",
   protect,
   adminOnly,
   OrderController.updateOrderStatus
 );
 
-export default router;
+export default orderRouter;
