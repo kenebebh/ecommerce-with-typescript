@@ -14,6 +14,8 @@ export const createCategory = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  let imageData = undefined;
+
   try {
     const { name, parentCategory } = req.body;
 
@@ -42,7 +44,6 @@ export const createCategory = async (
     const categoryId = new Types.ObjectId().toString();
 
     // Handle image upload if provided
-    let imageData = undefined;
 
     if (req.file) {
       const uploadResult = await CloudinaryService.uploadSingleCategoryImage(
@@ -72,14 +73,33 @@ export const createCategory = async (
       data: category,
     });
   } catch (error) {
+    // Cleanup logic
+    try {
+      // 1. Delete local file (if it still exist)
+      if (req.file) {
+        CloudinaryService.deleteLocalFile(req.file.path);
+      }
+
+      // 2. Delete uploaded images from Cloudinary (if upload succeeded)
+      if (imageData) {
+        if (!imageData.public_id) {
+          throw "Image not uploaded to cloudinary";
+        }
+
+        await CloudinaryService.deleteImage(imageData?.public_id);
+        console.log(`Deleted from Cloudinary`);
+      }
+    } catch (cleanupError) {
+      // Log cleanup errors but don't throw them
+      console.error("Error during cleanup:", cleanupError);
+    }
+
     next(error);
   } finally {
+    console.log("is this working?");
     // Always attempt to delete local files
-    if (req.files) {
-      const files = req.files as Express.Multer.File[];
-      files.forEach((file) => {
-        CloudinaryService.deleteLocalFile(file.path);
-      });
+    if (req.file) {
+      CloudinaryService.deleteLocalFile(req.file.path);
     }
   }
 };

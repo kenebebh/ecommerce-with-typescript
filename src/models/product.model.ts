@@ -1,4 +1,4 @@
-import mongoose, { Model, Schema } from "mongoose";
+import mongoose, { Model, Schema, SchemaTypes } from "mongoose";
 
 import type { IInventory, IProduct, IProductImage } from "../types/product.ts";
 import { generateSlug } from "../utils/generateSlug.ts";
@@ -81,12 +81,9 @@ const productSchema = new Schema<IProduct>(
       min: [0, "Price cannot be negative"],
     },
     category: {
-      type: String,
+      type: SchemaTypes.ObjectId,
+      ref: "Category",
       required: [true, "Product category is required"],
-      enum: {
-        values: ["electronics", "clothing", "books", "home", "sports", "other"],
-        message: "{VALUE} is not a valid category",
-      },
     },
     images: {
       type: [productImageSchema],

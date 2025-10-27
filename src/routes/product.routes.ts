@@ -12,7 +12,13 @@ productRouter.post(
   upload.array("productImages", 10),
   ProductController.createProduct
 );
-productRouter.get("/", paginate(Product), ProductController.getAllProducts);
+productRouter.get(
+  "/",
+  paginate(Product, {
+    populate: { path: "category" },
+  }),
+  ProductController.getAllProducts
+);
 productRouter.get("/low-stock", ProductController.getLowStockProducts);
 productRouter.get("/:id", ProductController.getProductById);
 productRouter.patch("/:id", ProductController.updateInventory);
