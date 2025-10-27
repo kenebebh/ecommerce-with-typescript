@@ -159,10 +159,12 @@ export class ProductController {
         images: uploadedImages,
       });
 
+      const populatedProduct = await product.populate({ path: "category" });
+
       res.status(201).json({
         success: true,
         message: "Product created successfully",
-        data: product,
+        data: populatedProduct,
       });
     } catch (error) {
       // Cleanup logic
