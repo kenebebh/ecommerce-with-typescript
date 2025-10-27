@@ -61,4 +61,11 @@ export interface IOrder extends Document {
   timeline: IOrderTimeline[];
   createdAt: Date;
   updatedAt: Date;
+
+  // Virtual fields and methods
+  updateStatus(status: OrderStatus, note?: string): Promise<IOrder>;
+  markAsPaid(transactionId: string): Promise<IOrder>;
+  markAsFailed(reason?: string): Promise<IOrder>;
+  cancelOrder(reason?: string): Promise<IOrder>;
+  canBeCancelled(): boolean;
 }
