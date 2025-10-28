@@ -1,6 +1,7 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction, RequestHandler } from "express";
 import Cart from "../models/cart.model.ts";
 import Product from "../models/product.model.ts";
+import type { Types } from "mongoose";
 
 export class CartController {
   /**
@@ -36,14 +37,14 @@ export class CartController {
    * Add item to cart
    */
   static async addProductToCart(
-    req: Request,
+    req: Request<{ productId: string }>,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const userId = req.user?._id;
 
-      const { productId } = req.body;
+      const { productId } = req.params;
 
       if (!userId) {
         res.status(401);
@@ -87,13 +88,18 @@ export class CartController {
       // Find or create cart
       const cart = await Cart.findOrCreateCart(userId);
 
+      console.log("Returned cart", cart);
+
+      const initialQuantity: number = 1;
+
       // Add item to cart (uses current product price)
-      await cart.addItem(productId, 1, product.price);
+      await cart.addItem(productId, initialQuantity, product.price);
+      console.log("After adding product", cart);
 
       // Populate and return updated cart
       const updatedCart = await Cart.findById(cart._id).populate({
         path: "items.productId",
-        select: "name price slug isActive ",
+        select: "name price slug images inventory isActive ",
       });
 
       res.status(200).json({

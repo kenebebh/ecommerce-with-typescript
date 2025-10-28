@@ -4,7 +4,6 @@ import { protect } from "../middleware/authMiddleware.ts";
 
 const cartRouter = Router();
 
-cartRouter.post("/", protect, CartController.addProductToCart);
 cartRouter.get("/", protect, CartController.getCart);
 cartRouter.post(
   "/increaseQuantity",
@@ -16,6 +15,7 @@ cartRouter.post(
   protect,
   CartController.decreaseProductQuantity
 );
+cartRouter.post("/:productId", protect, CartController.addProductToCart);
 cartRouter.delete(
   "/removeProduct/:productId",
   protect,

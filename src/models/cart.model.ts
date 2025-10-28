@@ -1,11 +1,11 @@
-import mongoose, { Schema, Model, Types } from "mongoose";
+import mongoose, { Schema, Model, Types, SchemaTypes } from "mongoose";
 import type { ICart, ICartItem } from "../types/cart.ts";
 
 // Cart Item sub-schema
 const cartItemSchema = new Schema<ICartItem>(
   {
     productId: {
-      type: Schema.Types.ObjectId,
+      type: SchemaTypes.ObjectId,
       ref: "Product",
       required: true,
     },
@@ -75,8 +75,13 @@ cartSchema.statics.findOrCreateCart = async function (
 ): Promise<ICart> {
   let cart = await this.findOne({ userId }).populate({
     path: "items.productId",
-    select: "name price images slug isActive availableQuantity",
+    select: "name slug price images inventory isActive",
   });
+
+  // To see the populated data properly in console:
+  if (cart) {
+    console.log("cart items:", JSON.stringify(cart.items, null, 2));
+  }
 
   if (!cart) {
     cart = await this.create({ userId, items: [] });
@@ -90,8 +95,18 @@ cartSchema.methods.addItem = async function (
   productId: Types.ObjectId | string,
   quantity: number,
   price: number
-): Promise<ICart> {
-  const existingItemIndex = this.items.findIndex(
+): Promise<void> {
+  // const existingItemIndex = this.items.findIndex(
+  //   (item: ICartItem) => item.productId.toString() === productId.toString()
+  // );
+
+  // Depopulate items to work with ObjectIds only
+  const items = this.items.map((item: any) => ({
+    ...item,
+    productId: item.productId._id || item.productId,
+  }));
+
+  const existingItemIndex = items.findIndex(
     (item: ICartItem) => item.productId.toString() === productId.toString()
   );
 
