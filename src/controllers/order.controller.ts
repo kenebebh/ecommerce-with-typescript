@@ -16,6 +16,7 @@ export class OrderController {
     next: NextFunction
   ): Promise<void> {
     const session = await mongoose.startSession();
+
     session.startTransaction();
 
     try {
@@ -31,12 +32,13 @@ export class OrderController {
       }
 
       // Get user's cart
-      const cart = await Cart.findOne({ userId }).populate("items.productId");
+      // const cart = await Cart.findOne({ userId }).populate("items.productId");
+      const cart = await Cart.findOrCreateCart(userId);
 
       if (!cart || cart.items.length === 0) {
         res.status(400).json({
           success: false,
-          message: "Cart is empty",
+          message: "Cart is empty. Cannot create order.",
         });
         return;
       }
