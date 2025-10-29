@@ -311,25 +311,24 @@ orderSchema.methods.markAsFailed = async function (
 orderSchema.methods.cancelOrder = async function (
   reason?: string
 ): Promise<IOrder> {
-  if (this.status === "confirmed" || this.status === "processing") {
+  if (this.status === "pending") {
+    this.status = "cancelled";
+    this.timeline.push({
+      status: "cancelled",
+      timestamp: new Date(),
+      note: reason || "Order cancelled by user",
+    });
+    return await this.save();
+  } else {
     throw new Error(
-      "Cannot cancel order that is already confirmed or processing"
+      "Cannot cancel order that is already confirmed, processed or shipped"
     );
   }
-
-  this.status = "cancelled";
-  this.timeline.push({
-    status: "cancelled",
-    timestamp: new Date(),
-    note: reason || "Order cancelled by user",
-  });
-
-  return await this.save();
 };
 
 // Instance method: Check if order can be cancelled
 orderSchema.methods.canBeCancelled = function (): boolean {
-  return this.status === "pending" || this.status === "failed";
+  return this.status === "pending";
 };
 
 // Add custom statics to the model interface
