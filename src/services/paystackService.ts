@@ -1,5 +1,6 @@
 import axios from "axios";
 import crypto from "crypto";
+import { nairaToKobo } from "../utils/nairaToKobo.ts";
 
 // Paystack API Configuration
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY as string;
@@ -80,7 +81,7 @@ class PaystackService {
     try {
       const data: InitializePaymentData = {
         email,
-        amount: Math.round(amount * 100), // Convert to kobo
+        amount: nairaToKobo(amount),
         reference,
         callback_url:
           callbackUrl || `${process.env.FRONTEND_URL}/payment/callback`,

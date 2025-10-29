@@ -78,10 +78,10 @@ cartSchema.statics.findOrCreateCart = async function (
     select: "name slug price images inventory isActive",
   });
 
-  // To see the populated data properly in console:
-  if (cart) {
-    console.log("cart items:", JSON.stringify(cart.items, null, 2));
-  }
+  // // To see the populated data properly in console:
+  // if (cart) {
+  //   console.log("cart items:", JSON.stringify(cart.items, null, 2));
+  // }
 
   if (!cart) {
     cart = await this.create({ userId, items: [] });

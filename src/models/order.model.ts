@@ -160,7 +160,6 @@ const orderSchema = new Schema<IOrder>(
   {
     orderNumber: {
       type: String,
-      required: true,
       unique: true,
     },
     userId: {

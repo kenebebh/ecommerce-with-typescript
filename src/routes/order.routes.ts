@@ -17,7 +17,10 @@ orderRouter.get(
   protect,
   adminOnly,
   paginate(Order, {
-    populate: { path: "userId", select: "name email" },
+    populate: {
+      path: "userId",
+      select: "fullName email verified phoneNumber address",
+    },
   }),
   OrderController.getAllOrders
 );
