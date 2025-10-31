@@ -6,7 +6,7 @@ const cartRouter = Router();
 
 cartRouter.get("/", protect, CartController.getCart);
 cartRouter.post(
-  "/increaseQuantity",
+  "/increaseQuantity/:productId",
   protect,
   CartController.increaseProductQuantity
 );

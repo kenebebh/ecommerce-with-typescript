@@ -236,6 +236,8 @@ export class PaymentController {
 
       const event = req.body;
 
+      console.log("event from paystack", event);
+
       // Handle different event types
       switch (event.event) {
         case "charge.success":
