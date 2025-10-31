@@ -11,14 +11,16 @@ if (!fs.existsSync(uploadsDir)) {
 
 const storage = multer.diskStorage({
   destination: function (
+    //@ts-ignore
     req: Request,
+    //@ts-ignore
     file: Express.Multer.File,
     cb: (error: Error | null, destination: string) => void
   ) {
     cb(null, uploadsDir);
   },
   filename: function (
-    req: Request,
+    _: Request,
     file: Express.Multer.File,
     cb: (error: Error | null, filename: string) => void
   ) {
@@ -32,7 +34,7 @@ const storage = multer.diskStorage({
 
 // File filter function
 const fileFilter = (
-  req: Request,
+  _: Request,
   file: Express.Multer.File,
   cb: FileFilterCallback
 ): void => {

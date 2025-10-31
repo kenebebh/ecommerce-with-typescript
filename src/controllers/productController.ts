@@ -10,7 +10,7 @@ import CloudinaryService from "../services/cloudinaryService.ts";
 
 export class ProductController {
   static async getAllProducts(
-    req: Request,
+    _: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
@@ -369,7 +369,7 @@ export class ProductController {
    * Get low stock products (Admin only)
    */
   static async getLowStockProducts(
-    req: Request,
+    _: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {

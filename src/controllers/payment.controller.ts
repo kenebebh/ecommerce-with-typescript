@@ -212,11 +212,7 @@ export class PaymentController {
    * Paystack webhook handler
    * CRITICAL: This is where Paystack notifies you about payment status
    */
-  static async handleWebhook(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  static async handleWebhook(req: Request, res: Response): Promise<void> {
     const session = await mongoose.startSession();
     session.startTransaction();
 

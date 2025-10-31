@@ -1,7 +1,6 @@
-import type { Request, Response, NextFunction, RequestHandler } from "express";
+import type { Request, Response, NextFunction } from "express";
 import Cart from "../models/cart.model.ts";
 import Product from "../models/product.model.ts";
-import type { Types } from "mongoose";
 
 export class CartController {
   /**
@@ -117,54 +116,58 @@ export class CartController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { productId } = req.params;
-    const userId = req.user?._id;
+    try {
+      const { productId } = req.params;
+      const userId = req.user?._id;
 
-    if (!userId) {
-      res.status(401);
-      throw new Error("User not authenticated");
-    }
+      if (!userId) {
+        res.status(401);
+        throw new Error("User not authenticated");
+      }
 
-    // Validate input
-    if (!productId) {
-      res.status(400);
-      throw new Error("Product ID is required");
-    }
+      // Validate input
+      if (!productId) {
+        res.status(400);
+        throw new Error("Product ID is required");
+      }
 
-    // Check if product exists
-    const product = await Product.findById(productId);
+      // Check if product exists
+      const product = await Product.findById(productId);
 
-    if (!product) {
-      res.status(404).json({
-        success: false,
-        message: "Product not found",
+      if (!product) {
+        res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+        return;
+      }
+
+      // Find or create cart
+      const cart = await Cart.findOrCreateCart(userId);
+
+      // Check if adding this quantity would exceed available stock
+      const currentQuantityInCart = cart.getItemQuantity(productId);
+      const totalQuantity = currentQuantityInCart + 1;
+
+      if (!product.hasSufficientStock(totalQuantity)) {
+        res.status(400).json({
+          success: false,
+          message: `${totalQuantity} not available. Only ${product.availableQuantity} items are available`,
+        });
+        return;
+      }
+
+      // Add item to cart (uses current product price)
+      await cart.addItem(productId, totalQuantity, product.price);
+
+      res.status(200).json({
+        success: true,
+        message: "Item quantity increased in cart",
+        data: cart,
       });
-      return;
+    } catch (error) {
+      next(error);
     }
-
-    // Find or create cart
-    const cart = await Cart.findOrCreateCart(userId);
-
-    // Check if adding this quantity would exceed available stock
-    const currentQuantityInCart = cart.getItemQuantity(productId);
-    const totalQuantity = currentQuantityInCart + 1;
-
-    if (!product.hasSufficientStock(totalQuantity)) {
-      res.status(400).json({
-        success: false,
-        message: `${totalQuantity} not available. Only ${product.availableQuantity} items are available`,
-      });
-      return;
-    }
-
-    // Add item to cart (uses current product price)
-    await cart.addItem(productId, totalQuantity, product.price);
-
-    res.status(200).json({
-      success: true,
-      message: "Item quantity increased in cart",
-      data: cart,
-    });
   }
 
   static async decreaseProductQuantity(
@@ -172,57 +175,61 @@ export class CartController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { productId } = req.params;
-    const userId = req.user?._id;
+    try {
+      const { productId } = req.params;
+      const userId = req.user?._id;
 
-    if (!userId) {
-      res.status(401);
-      throw new Error("User not authenticated");
-    }
+      if (!userId) {
+        res.status(401);
+        throw new Error("User not authenticated");
+      }
 
-    // Validate input
-    if (!productId) {
-      res.status(400);
-      throw new Error("Product ID is required");
-    }
+      // Validate input
+      if (!productId) {
+        res.status(400);
+        throw new Error("Product ID is required");
+      }
 
-    // Check if product exists
-    const product = await Product.findById(productId);
+      // Check if product exists
+      const product = await Product.findById(productId);
 
-    if (!product) {
-      res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-      return;
-    }
+      if (!product) {
+        res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+        return;
+      }
 
-    // Find or create cart
-    const cart = await Cart.findOrCreateCart(userId);
+      // Find or create cart
+      const cart = await Cart.findOrCreateCart(userId);
 
-    // Check if adding this quantity would exceed available stock
-    const currentQuantityInCart = cart.getItemQuantity(productId);
-    const decreasedQuantity = currentQuantityInCart - 1;
+      // Check if adding this quantity would exceed available stock
+      const currentQuantityInCart = cart.getItemQuantity(productId);
+      const decreasedQuantity = currentQuantityInCart - 1;
 
-    if (decreasedQuantity === 0) {
-      // Remove item if quantity drops to zero
-      await cart.removeItem(productId);
+      if (decreasedQuantity === 0) {
+        // Remove item if quantity drops to zero
+        await cart.removeItem(productId);
+        res.status(200).json({
+          success: true,
+          message: "Item removed from cart",
+          data: cart,
+        });
+        return;
+      } else {
+        // Add item to cart (uses current product price)
+        await cart.addItem(productId, decreasedQuantity, product.price);
+      }
+
       res.status(200).json({
         success: true,
-        message: "Item removed from cart",
+        message: "Item quantity decreased in cart",
         data: cart,
       });
-      return;
-    } else {
-      // Add item to cart (uses current product price)
-      await cart.addItem(productId, decreasedQuantity, product.price);
+    } catch (error) {
+      next(error);
     }
-
-    res.status(200).json({
-      success: true,
-      message: "Item quantity decreased in cart",
-      data: cart,
-    });
   }
 
   /**

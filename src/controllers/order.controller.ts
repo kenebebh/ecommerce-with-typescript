@@ -330,7 +330,7 @@ export class OrderController {
    * Get all orders (Admin only)
    */
   static async getAllOrders(
-    req: Request,
+    _: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
@@ -382,7 +382,7 @@ export class OrderController {
    * Get order statistics (Admin only)
    */
   static async getOrderStats(
-    req: Request,
+    _: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
