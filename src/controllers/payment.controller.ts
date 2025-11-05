@@ -100,7 +100,7 @@ export class PaymentController {
     session.startTransaction();
 
     try {
-      const { reference } = req.params;
+      const reference = req.query.reference as string;
 
       if (!reference) {
         res.status(400);
@@ -276,49 +276,90 @@ export class PaymentController {
    * Handle successful payment (called by webhook)
    */
   private static async handleSuccessfulPayment(
-    data: any,
+    webhookData: any,
     session: mongoose.ClientSession
   ): Promise<void> {
-    const { reference } = data;
+    const { reference } = webhookData;
 
-    const order = await Order.findOne({ "payment.reference": reference });
+    try {
+      // STEP 1: Verify payment with Paystack API
+      console.log(`🔍 Verifying payment: ${reference}`);
 
-    if (!order) {
-      console.error("Order not found for reference:", reference);
-      return;
-    }
+      const verification = await PaystackService.verifyPayment(reference);
 
-    // Skip if already processed
-    if (order.payment.status === "completed") {
-      console.log("Payment already processed:", reference);
-      return;
-    }
+      // Check if verification was successful
+      if (!verification.status) {
+        console.error("❌ Payment verification failed:", verification.message);
+        return;
+      }
 
-    // Mark order as paid
-    await order.markAsPaid(data.id.toString());
+      const paymentData = verification.data;
 
-    // Deduct inventory and release reservation
-    for (const item of order.items) {
-      await Product.findByIdAndUpdate(
-        item.productId,
-        {
-          $inc: {
-            "inventory.quantity": -item.quantity,
-            "inventory.reserved": -item.quantity,
+      // STEP 2: Check payment status
+      if (paymentData.status !== "success") {
+        console.warn(`⚠️ Payment not successful: ${paymentData.status}`);
+        return;
+      }
+
+      // STEP 3: Find order
+      const order = await Order.findOne({ "payment.reference": reference });
+
+      if (!order) {
+        console.error(`❌ Order not found for reference: ${reference}`);
+        return;
+      }
+
+      // STEP 4: Check if already processed (idempotency)
+      if (order.payment.status === "completed") {
+        console.log(`ℹ️ Payment already processed: ${reference}`);
+        return;
+      }
+
+      // STEP 5: Verify amount matches
+      const amountInNaira = PaystackService.toNaira(paymentData.amount);
+      if (Math.abs(amountInNaira - order.pricing.total) > 0.01) {
+        console.error(
+          `❌ Amount mismatch! Expected: ₦${order.pricing.total}, Got: ₦${amountInNaira}`
+        );
+        // Alert admin about potential fraud
+        return;
+      }
+
+      // STEP 6: All checks passed - mark as paid
+      console.log(
+        `✅ All verifications passed. Marking order as paid: ${order.orderNumber}`
+      );
+
+      await order.markAsPaid(paymentData.id.toString());
+
+      // STEP 7: Deduct inventory and release reservation
+      for (const item of order.items) {
+        await Product.findByIdAndUpdate(
+          item.productId,
+          {
+            $inc: {
+              "inventory.quantity": -item.quantity,
+              "inventory.reserved": -item.quantity,
+            },
           },
-        },
+          { session }
+        );
+      }
+
+      // STEP 8: Clear cart
+      await Cart.findOneAndUpdate(
+        { userId: order.userId },
+        { items: [] },
         { session }
       );
+
+      console.log(`✅ Payment processed successfully: ${reference}`);
+
+      // TODO: Send confirmation email to user
+    } catch (error) {
+      console.error("Error handling successful payment:", error);
+      throw error;
     }
-
-    // Clear cart
-    await Cart.findOneAndUpdate(
-      { userId: order.userId },
-      { items: [] },
-      { session }
-    );
-
-    console.log("Payment processed successfully:", reference);
   }
 
   /**
@@ -328,34 +369,36 @@ export class PaymentController {
     data: any,
     session: mongoose.ClientSession
   ): Promise<void> {
-    const { reference, gateway_response } = data;
+    try {
+      const { reference, gateway_response } = data;
 
-    const order = await Order.findOne({ "payment.reference": reference });
+      const order = await Order.findOne({ "payment.reference": reference });
 
-    if (!order) {
-      console.error("Order not found for reference:", reference);
-      return;
-    }
+      if (!order) {
+        console.error("Order not found for reference:", reference);
+        return;
+      }
 
-    // Skip if already failed
-    if (order.payment.status === "failed") {
-      console.log("Payment already marked as failed:", reference);
-      return;
-    }
+      // Skip if already failed
+      if (order.payment.status === "failed") {
+        console.log("Payment already marked as failed:", reference);
+        return;
+      }
 
-    // Mark order as failed
-    await order.markAsFailed(gateway_response);
+      // Mark order as failed
+      await order.markAsFailed(gateway_response);
 
-    // Release inventory reservation
-    for (const item of order.items) {
-      await Product.findByIdAndUpdate(
-        item.productId,
-        { $inc: { "inventory.reserved": -item.quantity } },
-        { session }
-      );
-    }
+      // Release inventory reservation
+      for (const item of order.items) {
+        await Product.findByIdAndUpdate(
+          item.productId,
+          { $inc: { "inventory.reserved": -item.quantity } },
+          { session }
+        );
+      }
 
-    console.log("Payment marked as failed:", reference);
+      console.log("Payment marked as failed:", reference);
+    } catch (error) {}
   }
 
   /**

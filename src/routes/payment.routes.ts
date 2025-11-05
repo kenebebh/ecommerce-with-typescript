@@ -23,11 +23,7 @@ paymentRouter.post("/initialize", protect, PaymentController.initializePayment);
  * @access  Private
  * @note    This can also be called from frontend callback
  */
-paymentRouter.get(
-  "/verify/:reference",
-  protect,
-  PaymentController.verifyPayment
-);
+paymentRouter.get("/verifyPayment", protect, PaymentController.verifyPayment);
 
 /**
  * @route   GET /api/payments/history
